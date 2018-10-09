@@ -246,6 +246,15 @@
       (perform-remote-query q))
     (refresh false)))
 
+(defn render-edn
+  "Assuming the use of qlkit-renderer for components, output edn.
+  edn structure returned can be server-side rendered with rum/render-html"
+  [c]
+  (let [component (@classes c)
+        props (parse-query-into-map (:query component) {})
+        state {:state (or (:state component) {})}]
+    ((:render component) nil props state)))
+
 #?(:clj (defn- refresh [remote-query?]
           nil)
    :cljs (do
