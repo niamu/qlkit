@@ -14,15 +14,15 @@
          (throw (ex-info (str "Unknown component member " nam) {}))))
      `(let [key# (keyword ~(str (:name (:ns &env))) ~(name nam))]
         (def ~nam key#)
-        (add-class key#
-                   ~(into {:display-name (name nam)}
-                          (for [[nam & more :as body] bodies]
-                            (if ('#{state query} nam)
-                              [(keyword nam)
-                               (last more)]
-                              [(keyword nam)
-                               `(fn ~(first more)
-                                  ~@(rest more))])))))))
+        (#'add-class key#
+                     ~(into {:display-name (name nam)}
+                            (for [[nam & more :as body] bodies]
+                              (if ('#{state query} nam)
+                                [(keyword nam)
+                                 (last more)]
+                                [(keyword nam)
+                                 `(fn ~(first more)
+                                    ~@(rest more))])))))))
 
 (defn safe-deref [state]
   (if #?(:clj (instance? clojure.lang.IDeref state)
@@ -186,7 +186,7 @@
         (filter (fn [[k v]]
                   (not= v (map1 k)))
                 map2)))
-             
+
 (defn- root-query [env query]
   "Takes a query that is relative to a component in the hierarchy and converts it into a query at the root level. Note that each term in the original query will be given its own 'root' in the resulting query, which is done to control ordering of side effects."
   (for [query-term query]
@@ -248,7 +248,7 @@
 
 #?(:clj (defn- refresh [remote-query?]
           nil)
-   :cljs (do 
+   :cljs (do
 
            (def ^{:doc "Atom containing a function that takes a React component and returns the React component at the root of the application's DOM."}
              make-root-component
@@ -263,7 +263,7 @@
              (swap! component-registry assoc k v))
 
            (declare create-instance)
-           
+
            (defn- clj-state [state]
              "Pulls state out of the react component state."
              (if state
@@ -277,7 +277,7 @@
                {}))
 
            (def rendering-middleware (atom []))
-           
+
            (defn- react-class [class]
              "Creates a react class from the qlkit class description format"
              (js/createReactClass (let [mount (:component-did-mount class)
@@ -313,7 +313,7 @@
                                               (this-as this
                                                 (rprops this (clj-atts props))))))
                                     obj)))
-           
+
            (defn update-state!* [this fun & args]
              "Update the component-local state with the given function"
              (.setState this
@@ -324,7 +324,7 @@
 
            (defn create-instance [component atts]
              (createElement (::react-class (@classes component)) #js {:atts atts  :env (::env atts) :query (::query atts)}))
-           
+
            (defn- refresh [remote-query?]
              "Force a redraw of the entire UI. This will trigger local parsers to gather data, and optionally will fetch data from server as well."
              (let [query (get-query (:component @mount-info))
@@ -336,4 +336,4 @@
                (when remote-query?
                  (perform-remote-query (parse-query-remote query)))
                (render (@make-root-component (create-instance (:component @mount-info) atts))
-                       (:dom-element @mount-info)))))) 
+                       (:dom-element @mount-info))))))
